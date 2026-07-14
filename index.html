@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Installation Control Center (MICC)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons via CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Export Utility Libraries (html2canvas, jspdf, gifshot, html2pdf.js, SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Chart.js for Pivot-Style Graphs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation & Filters -->
+        <aside class="sidebar">
+            <div class="sidebar-header" style="margin-bottom: 1.5rem;">
+                <div class="logo-area" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
+                    <img src="logo.png" alt="Kaynes Circuits Logo" style="height: 38px; max-width: 100%; object-fit: contain;">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; padding-left: 2px;">
+                        Installation Control Center
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Search & Filters Panel -->
+            <div class="filter-panel">
+                <h3><i class="fa-solid fa-filter"></i> Filters</h3>
+                
+                <div class="filter-group">
+                    <label for="search-input">Search Machines</label>
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search machine, supplier...">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Department</label>
+                    <div class="custom-multiselect" id="dept-multiselect">
+                        <button class="multiselect-btn" type="button" id="dept-multiselect-btn">
+                            <span class="multiselect-btn-text" id="dept-multiselect-text">All Departments</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="multiselect-dropdown-content" id="dept-multiselect-dropdown">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Supplier</label>
+                    <div class="custom-multiselect" id="supplier-multiselect">
+                        <button class="multiselect-btn" type="button" id="supplier-multiselect-btn">
+                            <span class="multiselect-btn-text" id="supplier-multiselect-text">All Suppliers</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="multiselect-dropdown-content" id="supplier-multiselect-dropdown">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-lead">Team Lead / Primary</label>
+                    <select id="filter-lead">
+                        <option value="all">All Personnel</option>
+                    </select>
+                </div>
+
+                <button id="reset-filters-btn" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Reset Filters
+                </button>
+            </div>
+
+            <!-- Tab Navigation Menu -->
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="overview">
+                    <i class="fa-solid fa-chart-pie"></i> Overview Dashboard
+                </button>
+                <button class="nav-item" data-tab="timeline">
+                    <i class="fa-solid fa-timeline"></i> Installation Timeline
+                </button>
+                <button class="nav-item" data-tab="manpower">
+                    <i class="fa-solid fa-users"></i> Manpower Allocation
+                </button>
+                <button class="nav-item" data-tab="pending">
+                    <i class="fa-solid fa-truck-ramp-box"></i> Pending Equipments
+                </button>
+                <button class="nav-item" data-tab="mep">
+                    <i class="fa-solid fa-screwdriver-wrench"></i> MEP Readiness
+                </button>
+            </nav>
+
+            <!-- Global Theme Selector -->
+            <div class="sidebar-theme-selector" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); margin-bottom: 1rem; position: relative;">
+                <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;"><i class="fa-solid fa-palette"></i> Interface Theme</label>
+                <div class="export-dropdown" id="sidebar-theme-dropdown" style="width: 100%;">
+                    <button class="btn btn-secondary dropdown-toggle w-100" id="sidebar-theme-btn" style="justify-content: space-between; display: flex; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: var(--text-primary); font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; transition: var(--transition);">
+                        <span><i class="fa-solid fa-circle" id="sidebar-theme-indicator" style="color: #38bdf8; margin-right: 8px; font-size: 0.8rem;"></i> <span id="sidebar-theme-label">Glass Dark</span></span>
+                        <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu" id="sidebar-theme-menu" style="left: 0; right: auto; width: 100%; top: auto; bottom: 100%; margin-bottom: 8px; margin-top: 0; transform: translateY(-10px); max-height: 420px; overflow-y: auto;">
+                        <!-- Default -->
+                        <li><a href="#" class="theme-option" data-theme="default"><i class="fa-solid fa-circle" style="color: #38bdf8;"></i> Glass Dark (Default)</a></li>
+                        <!-- Brand Themes -->
+                        <li class="dropdown-divider-label" style="padding: 6px 12px 2px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); pointer-events: none;">Brand Themes</li>
+                        <li><a href="#" class="theme-option" data-theme="apple-light"><i class="fa-solid fa-circle" style="color: #0071E3;"></i> Apple Light</a></li>
+                        <li><a href="#" class="theme-option" data-theme="apple-dark"><i class="fa-solid fa-circle" style="color: #0A84FF;"></i> Apple Dark</a></li>
+                        <li><a href="#" class="theme-option" data-theme="microsoft-fluent"><i class="fa-solid fa-circle" style="color: #0078D4;"></i> Microsoft Fluent</a></li>
+                        <li><a href="#" class="theme-option" data-theme="microsoft-dark"><i class="fa-solid fa-circle" style="color: #2899F5;"></i> Microsoft Dark</a></li>
+                        <li><a href="#" class="theme-option" data-theme="meta-blue"><i class="fa-solid fa-circle" style="color: #1877F2;"></i> Meta Blue</a></li>
+                        <li><a href="#" class="theme-option" data-theme="google-material"><i class="fa-solid fa-circle" style="color: #1A73E8;"></i> Google Material</a></li>
+                        <!-- Enterprise Themes -->
+                        <li class="dropdown-divider-label" style="padding: 6px 12px 2px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); pointer-events: none;">Enterprise Themes</li>
+                        <li><a href="#" class="theme-option" data-theme="ey-corporate"><i class="fa-solid fa-circle" style="color: #FFE600;"></i> EY Corporate</a></li>
+                        <li><a href="#" class="theme-option" data-theme="deloitte-green"><i class="fa-solid fa-circle" style="color: #86BC25;"></i> Deloitte Green</a></li>
+                        <li><a href="#" class="theme-option" data-theme="pwc-orange"><i class="fa-solid fa-circle" style="color: #FF6D00;"></i> PwC Orange</a></li>
+                        <li><a href="#" class="theme-option" data-theme="ibm-carbon"><i class="fa-solid fa-circle" style="color: #0F62FE;"></i> IBM Carbon</a></li>
+                        <li><a href="#" class="theme-option" data-theme="sap-horizon"><i class="fa-solid fa-circle" style="color: #0A6ED1;"></i> SAP Horizon</a></li>
+                        <li><a href="#" class="theme-option" data-theme="salesforce-lightning"><i class="fa-solid fa-circle" style="color: #0176D3;"></i> Salesforce Lightning</a></li>
+                        <li><a href="#" class="theme-option" data-theme="adobe-experience"><i class="fa-solid fa-circle" style="color: #FA0F00;"></i> Adobe Experience</a></li>
+                        <!-- Custom Themes -->
+                        <li class="dropdown-divider-label" style="padding: 6px 12px 2px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); pointer-events: none;">Custom Themes</li>
+                        <li><a href="#" class="theme-option" data-theme="industrial-dark"><i class="fa-solid fa-circle" style="color: #007ACC;"></i> Industrial Dark</a></li>
+                        <li><a href="#" class="theme-option" data-theme="modern-blue"><i class="fa-solid fa-circle" style="color: #4A90E2;"></i> Modern Blue</a></li>
+                        <li><a href="#" class="theme-option" data-theme="elegant-grey"><i class="fa-solid fa-circle" style="color: #607D8B;"></i> Elegant Grey</a></li>
+                        <li><a href="#" class="theme-option" data-theme="premium-navy"><i class="fa-solid fa-circle" style="color: #D4AF37;"></i> Premium Navy</a></li>
+                        <li><a href="#" class="theme-option" data-theme="professional-green"><i class="fa-solid fa-circle" style="color: #2ECC71;"></i> Professional Green</a></li>
+                        <li><a href="#" class="theme-option" data-theme="executive-purple"><i class="fa-solid fa-circle" style="color: #7B61FF;"></i> Executive Purple</a></li>
+                        <li><a href="#" class="theme-option" data-theme="industrial-orange"><i class="fa-solid fa-circle" style="color: #FF9800;"></i> Industrial Orange</a></li>
+                        <li><a href="#" class="theme-option" data-theme="minimal-light"><i class="fa-solid fa-circle" style="color: #009688;"></i> Minimal Light</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="sidebar-sync-config" style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-bottom: 0.5rem;">
+                <button class="btn btn-secondary w-100" id="open-sync-settings-btn" style="justify-content: center; gap: 8px; font-size: 0.85rem; padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); display: flex; align-items: center; border-radius: 6px; width: 100%; color: var(--text-primary); cursor: pointer;">
+                    <i class="fa-solid fa-cloud-arrow-up" style="color: var(--accent-blue);"></i> Google Sheets Sync
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <span class="update-tag"><i class="fa-solid fa-arrows-rotate"></i> Last sync: May 26, 2026</span>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title-wrapper">
+                    <h2 id="current-tab-title">Overview Dashboard</h2>
+                    <p class="text-muted" id="current-tab-description">Key performance metrics and overall project state.</p>
+                </div>
+                <div class="header-actions" id="main-header-actions" style="display: block;">
+                    <div class="export-dropdown module-export-dropdown" id="export-menu-container" data-module="overview">
+                        <button class="btn btn-primary dropdown-toggle" id="export-dropdown-btn">
+                            <i class="fa-solid fa-download"></i> Export <i class="fa-solid fa-chevron-down" style="font-size:0.7rem; margin-left:4px;"></i>
+                        </button>
+                        <ul class="dropdown-menu" id="export-dropdown-menu">
+                            <li><a href="#" class="export-png-btn"><i class="fa-solid fa-file-image text-blue"></i> Save as PNG (4K)</a></li>
+                            <li><a href="#" class="export-jpeg-btn"><i class="fa-solid fa-file-image text-green"></i> Save as JPEG (4K)</a></li>
+                            <li><a href="#" class="export-pdf-btn"><i class="fa-solid fa-file-pdf text-red"></i> Save as PDF (HD)</a></li>
+                            <div class="dropdown-divider"></div>
+                            <li><a href="#" class="export-excel-btn"><i class="fa-solid fa-file-excel text-green"></i> Export to Excel</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Metrics Cards Grid -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="card-icon blue">
+                        <i class="fa-solid fa-gears"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Total Machines</span>
+                        <h3 id="metric-total-machines">-</h3>
+                        <span class="card-subtext" id="metric-subtext-total">Across all phases</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-icon green">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Completed Tasks</span>
+                        <h3 id="metric-completed">-</h3>
+                        <span class="card-subtext" id="metric-subtext-completed">100% finished</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-icon amber">
+                        <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Ongoing / Active</span>
+                        <h3 id="metric-ongoing">-</h3>
+                        <span class="card-subtext" id="metric-subtext-ongoing">Currently in progress</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="card-icon purple">
+                        <i class="fa-solid fa-truck"></i>
+                    </div>
+                    <div class="card-info">
+                        <span class="card-label">Pending Equipments</span>
+                        <h3 id="metric-pending">-</h3>
+                        <span class="card-subtext" id="metric-subtext-pending">In queue / transit</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dynamic Tab Views -->
+            <div class="tab-content-container">
+                
+                <!-- OVERVIEW TAB -->
+                <div id="tab-overview" class="tab-pane active">
+                    <div class="dashboard-row">
+                        <!-- Department Progress Card -->
+                        <div class="glass-card flex-2">
+                            <h3><i class="fa-solid fa-chart-line"></i> Department Installation Progress</h3>
+                            <div class="dept-progress-grid" id="dept-progress-grid" style="display: flex; flex-direction: column; gap: 0.8rem; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                                <!-- Rendered dynamically in JS -->
+                            </div>
+                        </div>
+
+                        <!-- Project Metrics Summary Card -->
+                        <div class="glass-card flex-1">
+                            <h3><i class="fa-solid fa-square-poll-vertical"></i> Project Metrics Summary</h3>
+                            <div class="chart-summary-vertical" style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem;">
+                                <div class="chart-summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04);">
+                                    <span class="summary-label" style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Overall Completion</span>
+                                    <h4 id="overview-overall-pct" style="margin: 0; font-size: 1.35rem; color: var(--accent-green); font-weight: 700;">0%</h4>
+                                </div>
+                                <div class="chart-summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04);">
+                                    <span class="summary-label" style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Completed Days</span>
+                                    <h4 id="overview-completed-days" style="margin: 0; font-size: 1.2rem; color: var(--accent-blue); font-weight: 600;">0 Days</h4>
+                                </div>
+                                <div class="chart-summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04);">
+                                    <span class="summary-label" style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Total Days Planned</span>
+                                    <h4 id="overview-planned-days" style="margin: 0; font-size: 1.2rem; color: var(--accent-blue); font-weight: 600;">0 Days</h4>
+                                </div>
+                                <div class="chart-summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04);">
+                                    <span class="summary-label" style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Project Start Date</span>
+                                    <h4 id="overview-start-date" style="margin: 0; font-size: 1.15rem; color: var(--accent-blue); font-weight: 600;">-</h4>
+                                </div>
+                                <div class="chart-summary-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.04);">
+                                    <span class="summary-label" style="margin: 0; color: var(--text-secondary); font-size: 0.85rem;">Project End Date</span>
+                                    <h4 id="overview-end-date" style="margin: 0; font-size: 1.15rem; color: var(--accent-blue); font-weight: 600;">-</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-row mt-4">
+                        <!-- Recent Activity / Upcoming Timeline Highlights -->
+                        <div class="glass-card flex-1">
+                            <h3><i class="fa-solid fa-bell"></i> Critical Path Alerts / Upcoming Installations</h3>
+                            <div class="alert-list" id="upcoming-activities-list">
+                                <!-- Dynamic alerts -->
+                            </div>
+                        </div>
+
+                        <!-- Quick Resources Summary -->
+                        <div class="glass-card flex-1">
+                            <h3><i class="fa-solid fa-users-viewfinder"></i> Top Teams & Lead Allocations</h3>
+                            <div class="lead-allocations-list" id="lead-allocations-list">
+                                <!-- Dynamic lead allocations -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIMELINE TAB (GANTT CHART) -->
+                <div id="tab-timeline" class="tab-pane">
+                    <div class="glass-card">
+                        <div class="timeline-controls" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
+                            <div style="display: flex; width: 100%; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                                <h3>Gantt Scheduler</h3>
+                                <div class="export-dropdown module-export-dropdown" data-module="timeline">
+                                    <button class="btn btn-primary dropdown-toggle" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-download"></i> Export <i class="fa-solid fa-chevron-down" style="font-size:0.6rem; margin-left:4px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#" class="export-png-btn"><i class="fa-solid fa-file-image text-blue"></i> Save as PNG (4K)</a></li>
+                                        <li><a href="#" class="export-jpeg-btn"><i class="fa-solid fa-file-image text-green"></i> Save as JPEG (4K)</a></li>
+                                        <li><a href="#" class="export-pdf-btn"><i class="fa-solid fa-file-pdf text-red"></i> Save as PDF (HD)</a></li>
+                                        <div class="dropdown-divider"></div>
+                                        <li><a href="#" class="export-excel-btn"><i class="fa-solid fa-file-excel text-green"></i> Export to Excel</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                                <div class="timeline-legend">
+                                    <span class="legend-item"><span class="legend-dot color-install"></span> Installation</span>
+                                    <span class="legend-item"><span class="legend-dot color-leaching"></span> Leaching</span>
+                                    <span class="legend-item"><span class="legend-dot color-trials"></span> Chemical Trials</span>
+                                    <span class="legend-item"><span class="legend-dot color-training"></span> Training</span>
+                                    <span class="legend-item"><span class="legend-dot color-other"></span> Other/Misc</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Date Range & Add Machine Controls -->
+                            <div class="timeline-toolbar" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.015); border: 1px solid var(--glass-border); padding: 0.8rem 1.2rem; border-radius: 8px; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="timeline-start-date" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">Start Date:</label>
+                                    <input type="date" id="timeline-start-date" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition);">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="timeline-end-date" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">End Date:</label>
+                                    <input type="date" id="timeline-end-date" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition);">
+                                </div>
+                                <button id="reset-timeline-dates" class="btn btn-secondary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; height: 32px;">
+                                    <i class="fa-solid fa-arrow-rotate-left"></i> Reset Dates
+                                </button>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="timeline-sort" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">Sort By:</label>
+                                    <select id="timeline-sort" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition); cursor: pointer; height: 32px;">
+                                        <option value="default">Default Order</option>
+                                        <option value="name-asc">Name (A-Z)</option>
+                                        <option value="name-desc">Name (Z-A)</option>
+                                        <option value="start-date-asc">Start Date (Earliest First)</option>
+                                        <option value="start-date-desc">Start Date (Latest First)</option>
+                                        <option value="progress-desc">Progress (Highest First)</option>
+                                        <option value="progress-asc">Progress (Lowest First)</option>
+                                        <option value="dept-asc">Department (A-Z)</option>
+                                    </select>
+                                </div>
+                                <button id="add-machine-btn" class="btn btn-primary" style="margin-left: auto; padding: 0.35rem 1rem; font-size: 0.8rem; height: 32px;">
+                                    <i class="fa-solid fa-circle-plus"></i> Add Machine
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline Wrapper -->
+                        <div class="timeline-scroll-wrapper">
+                            <div class="gantt-chart-container" id="gantt-chart">
+                                <!-- Dynamic Gantt Rendered Here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MANPOWER TAB -->
+                <div id="tab-manpower" class="tab-pane">
+                    <!-- Pivot Charts Analytics Section -->
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.04); padding-bottom: 0.8rem; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
+                            <h3 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-chart-column"></i> Manpower Analytics Dashboard</h3>
+                            <button id="toggle-manpower-charts" class="btn btn-secondary" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-chevron-up"></i> <span>Collapse Charts</span>
+                            </button>
+                        </div>
+                        <p class="text-muted" style="margin-bottom: 1.2rem;">Pivot-style graphical analysis of manpower distribution, machine assignments by person, and supplier-wise equipment breakdown.</p>
+                        
+                        <!-- Summary KPI Cards -->
+                        <div class="manpower-kpi-row" id="manpower-kpi-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="manpower-kpi-card">
+                                <div class="manpower-kpi-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-building"></i></div>
+                                <div class="manpower-kpi-info">
+                                    <span class="manpower-kpi-label">Departments</span>
+                                    <h4 id="mp-kpi-depts" class="manpower-kpi-value" style="color: #38bdf8;">0</h4>
+                                </div>
+                            </div>
+                            <div class="manpower-kpi-card">
+                                <div class="manpower-kpi-icon" style="background: rgba(52, 211, 153, 0.12); color: #34d399;"><i class="fa-solid fa-users"></i></div>
+                                <div class="manpower-kpi-info">
+                                    <span class="manpower-kpi-label">Total Personnel</span>
+                                    <h4 id="mp-kpi-personnel" class="manpower-kpi-value" style="color: #34d399;">0</h4>
+                                </div>
+                            </div>
+                            <div class="manpower-kpi-card">
+                                <div class="manpower-kpi-icon" style="background: rgba(251, 191, 36, 0.12); color: #fbbf24;"><i class="fa-solid fa-gears"></i></div>
+                                <div class="manpower-kpi-info">
+                                    <span class="manpower-kpi-label">Total Machines</span>
+                                    <h4 id="mp-kpi-machines" class="manpower-kpi-value" style="color: #fbbf24;">0</h4>
+                                </div>
+                            </div>
+                            <div class="manpower-kpi-card">
+                                <div class="manpower-kpi-icon" style="background: rgba(167, 139, 250, 0.12); color: #a78bfa;"><i class="fa-solid fa-truck-ramp-box"></i></div>
+                                <div class="manpower-kpi-info">
+                                    <span class="manpower-kpi-label">Unique Suppliers</span>
+                                    <h4 id="mp-kpi-suppliers" class="manpower-kpi-value" style="color: #a78bfa;">0</h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Container -->
+                        <div id="manpower-charts-container" class="manpower-charts-grid">
+                            <!-- Chart 1: Department-wise Manpower & Machines (Grouped Bar) -->
+                            <div class="manpower-chart-card">
+                                <h5 class="manpower-chart-title"><i class="fa-solid fa-chart-bar"></i> Department: Manpower vs Machines</h5>
+                                <div class="manpower-chart-wrapper">
+                                    <canvas id="chart-dept-manpower"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Chart 2: Person-wise Machine Allocation (Horizontal Bar) -->
+                            <div class="manpower-chart-card">
+                                <h5 class="manpower-chart-title"><i class="fa-solid fa-user-gear"></i> Person: Machine Assignments</h5>
+                                <div class="manpower-chart-wrapper">
+                                    <canvas id="chart-person-machines"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Chart 3: Supplier-wise Machine Count (Doughnut) -->
+                            <div class="manpower-chart-card">
+                                <h5 class="manpower-chart-title"><i class="fa-solid fa-industry"></i> Supplier: Machine Distribution</h5>
+                                <div class="manpower-chart-wrapper manpower-chart-wrapper-donut">
+                                    <canvas id="chart-supplier-machines"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Chart 4: Department Workload Heatmap (Stacked Bar) -->
+                            <div class="manpower-chart-card">
+                                <h5 class="manpower-chart-title"><i class="fa-solid fa-layer-group"></i> Department: Role Distribution</h5>
+                                <div class="manpower-chart-wrapper">
+                                    <canvas id="chart-dept-roles"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Existing Data Tables Section -->
+                    <div class="glass-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.04); padding-bottom: 0.8rem; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
+                            <h3 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-users-gear"></i> Department-wise Manpower Allocation</h3>
+                            <div class="export-dropdown module-export-dropdown" data-module="manpower">
+                                <button class="btn btn-primary dropdown-toggle" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-download"></i> Export <i class="fa-solid fa-chevron-down" style="font-size:0.6rem; margin-left:4px;"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" class="export-png-btn"><i class="fa-solid fa-file-image text-blue"></i> Save as PNG (4K)</a></li>
+                                    <li><a href="#" class="export-jpeg-btn"><i class="fa-solid fa-file-image text-green"></i> Save as JPEG (4K)</a></li>
+                                    <li><a href="#" class="export-pdf-btn"><i class="fa-solid fa-file-pdf text-red"></i> Save as PDF (HD)</a></li>
+                                    <div class="dropdown-divider"></div>
+                                    <li><a href="#" class="export-excel-btn"><i class="fa-solid fa-file-excel text-green"></i> Export to Excel</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-4">Detailed workload mapping, overall machine installation teams, and assigned machine counts grouped by department.</p>
+                        
+                        <div id="dept-manpower-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <!-- Dynamic department-grouped cards rendered in JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PENDING EQUIPMENTS TAB -->
+                <div id="tab-pending" class="tab-pane">
+                    <div class="dashboard-row">
+                        <!-- Pending Equipments Table -->
+                        <div class="glass-card flex-2">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255, 255, 255, 0.04); padding-bottom: 0.6rem; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
+                                <h3 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-clipboard-list"></i> Pending Equipment Orders</h3>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; height: 32px;" onclick="resetPendingOverrides()">
+                                        <i class="fa-solid fa-arrow-rotate-left"></i> Reset Defaults
+                                    </button>
+                                    <button class="btn btn-primary" id="add-pending-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-circle-plus"></i> Add Order
+                                    </button>
+                                    <div class="export-dropdown module-export-dropdown" data-module="pending">
+                                        <button class="btn btn-primary dropdown-toggle" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-download"></i> Export <i class="fa-solid fa-chevron-down" style="font-size:0.6rem; margin-left:4px;"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="#" class="export-png-btn"><i class="fa-solid fa-file-image text-blue"></i> Save as PNG (4K)</a></li>
+                                            <li><a href="#" class="export-jpeg-btn"><i class="fa-solid fa-file-image text-green"></i> Save as JPEG (4K)</a></li>
+                                            <li><a href="#" class="export-pdf-btn"><i class="fa-solid fa-file-pdf text-red"></i> Save as PDF (HD)</a></li>
+                                            <div class="dropdown-divider"></div>
+                                            <li><a href="#" class="export-excel-btn"><i class="fa-solid fa-file-excel text-green"></i> Export to Excel</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pending Equipment Filters & Sorting -->
+                            <div class="pending-toolbar" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.015); border: 1px solid var(--glass-border); padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1rem; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px;">
+                                    <label for="pending-filter-dept" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Department:</label>
+                                    <select id="pending-filter-dept" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition); cursor: pointer; height: 32px; width: 100%;">
+                                        <option value="all">All Departments</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px;">
+                                    <label for="pending-filter-mach" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Machine:</label>
+                                    <select id="pending-filter-mach" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition); cursor: pointer; height: 32px; width: 100%;">
+                                        <option value="all">All Machines</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 160px;">
+                                    <label for="pending-filter-supplier" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Supplier:</label>
+                                    <select id="pending-filter-supplier" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition); cursor: pointer; height: 32px; width: 100%;">
+                                        <option value="all">All Suppliers</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 180px;">
+                                    <label for="pending-sort" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Sort By:</label>
+                                    <select id="pending-sort" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 6px; padding: 0.35rem 0.6rem; font-size: 0.85rem; outline: none; transition: var(--transition); cursor: pointer; height: 32px; width: 100%;">
+                                        <option value="priority-asc">Priority (Low to High)</option>
+                                        <option value="priority-desc">Priority (High to Low)</option>
+                                        <option value="name-asc">Machine Name (A-Z)</option>
+                                        <option value="name-desc">Machine Name (Z-A)</option>
+                                        <option value="lead-asc">Lead Time (Shortest)</option>
+                                        <option value="lead-desc">Lead Time (Longest)</option>
+                                        <option value="transit-asc">Transit Time (Shortest)</option>
+                                        <option value="transit-desc">Transit Time (Longest)</option>
+                                        <option value="total-asc">Total Time (Shortest)</option>
+                                        <option value="total-desc">Total Time (Longest)</option>
+                                        <option value="delivery-asc">Delivery Date (Earliest)</option>
+                                        <option value="delivery-desc">Delivery Date (Latest)</option>
+                                        <option value="status-asc">Status (A-Z)</option>
+                                        <option value="status-desc">Status (Z-A)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="table-wrapper">
+                                <table class="data-table" id="pending-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 70px;">Priority</th>
+                                            <th style="width: 100px;">Capex #</th>
+                                            <th>Machine Name</th>
+                                            <th style="width: 130px;">Department</th>
+                                            <th style="width: 130px;">Supplier</th>
+                                            <th style="width: 90px;">Lead Time (wks)</th>
+                                            <th style="width: 90px;">Transit (wks)</th>
+                                            <th style="width: 100px;">Total Time</th>
+                                            <th style="width: 130px;">Order Date</th>
+                                            <th style="width: 110px;">Est. Delivery</th>
+                                            <th style="width: 140px;">Status</th>
+                                            <th style="width: 60px;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pending-table-body">
+                                        <!-- Dynamic pending rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Transit Delay Simulator -->
+                        <div class="glass-card flex-1">
+                            <h3><i class="fa-solid fa-sliders"></i> Schedule Impact Simulator</h3>
+                            <p class="text-muted mb-4">Adjust lead/transit variables to forecast delivery and downstream installation dates.</p>
+                            
+                            <form id="simulator-form">
+                                <div class="form-group">
+                                    <label for="sim-global-transit">Global Transit Shift (Weeks)</label>
+                                    <input type="number" id="sim-global-transit" value="0" min="-5" max="10" class="form-control">
+                                    <span class="help-text">Simulates supply chain disruptions or customs delay (+/- weeks)</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sim-dept-filter">Target Department</label>
+                                    <select id="sim-dept-filter" class="form-control">
+                                        <option value="all">All Departments</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mt-2">
+                                    <i class="fa-solid fa-calculator"></i> Simulate Impact
+                                </button>
+                            </form>
+
+                            <div class="sim-results-card mt-4" id="sim-results" style="display: none;">
+                                <h4>Simulation Results</h4>
+                                <div class="sim-metric">
+                                    <span class="sim-label">Average Delivery Delay:</span>
+                                    <span class="sim-value alert-text" id="sim-avg-delay">0 weeks</span>
+                                </div>
+                                <div class="sim-metric mt-2">
+                                    <span class="sim-label">Impacted Projects:</span>
+                                    <span class="sim-value" id="sim-impacted-count">0 items</span>
+                                </div>
+                                <div class="sim-metric mt-2">
+                                    <span class="sim-label">New Max Delivery Date:</span>
+                                    <span class="sim-value text-bold" id="sim-max-delivery">-</span>
+                                </div>
+                                <button id="reset-sim-btn" class="btn btn-secondary w-100 mt-4">Reset Simulation</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SITE READINESS TAB -->
+                <div id="tab-readiness" class="tab-pane">
+                    <div class="glass-card">
+                        <h3><i class="fa-solid fa-house-laptop"></i> Infrastructure Readiness & Logistics</h3>
+                        <p class="text-muted mb-4">Logistics and utility readiness tracking for CNC Drilling, Routing, Soldermask, and Imaging floors.</p>
+                        
+                        <div class="readiness-grid" id="readiness-grid">
+                            <!-- Dynamic infrastructure cards -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MEP READINESS TAB -->
+                <div id="tab-mep" class="tab-pane">
+                    <div class="glass-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255, 255, 255, 0.04); padding-bottom: 0.8rem; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
+                            <h3 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-industry"></i> MEP Readiness & Installation Forecasting</h3>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; height: 32px;" onclick="resetMepOverrides()">
+                                    <i class="fa-solid fa-arrow-rotate-left"></i> Reset Overrides
+                                </button>
+                                <div class="export-dropdown module-export-dropdown" data-module="mep">
+                                    <button class="btn btn-primary dropdown-toggle" style="padding: 0.35rem 0.8rem; font-size: 0.8rem; height: 32px; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-download"></i> Export <i class="fa-solid fa-chevron-down" style="font-size:0.6rem; margin-left:4px;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#" class="export-png-btn"><i class="fa-solid fa-file-image text-blue"></i> Save as PNG (4K)</a></li>
+                                        <li><a href="#" class="export-jpeg-btn"><i class="fa-solid fa-file-image text-green"></i> Save as JPEG (4K)</a></li>
+                                        <li><a href="#" class="export-pdf-btn"><i class="fa-solid fa-file-pdf text-red"></i> Save as PDF (HD)</a></li>
+                                        <div class="dropdown-divider"></div>
+                                        <li><a href="#" class="export-excel-btn"><i class="fa-solid fa-file-excel text-green"></i> Export to Excel</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-4">View utility installation status across production departments, input actual/expected milestone dates, and dynamically calculate expected installation readiness dates.</p>
+                        
+                        <!-- Summary Cards -->
+                        <div class="mep-summary-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1.5rem;">
+                            <div class="metric-card" style="padding:1rem; background:rgba(255,255,255,0.015); border:1px solid var(--glass-border); border-radius:8px; display:flex; flex-direction:column; gap:4px; height:auto; min-height:unset; width:auto;">
+                                <span class="card-label" style="font-size:0.75rem; color:var(--text-secondary);">Total Departments</span>
+                                <h4 id="mep-total-depts" style="margin:0; font-size:1.6rem; color:var(--accent-blue); font-weight:700;">0</h4>
+                            </div>
+                            <div class="metric-card" style="padding:1rem; background:rgba(255,255,255,0.015); border:1px solid var(--glass-border); border-radius:8px; display:flex; flex-direction:column; gap:4px; height:auto; min-height:unset; width:auto;">
+                                <span class="card-label" style="font-size:0.75rem; color:var(--text-secondary);">Ready for Installation</span>
+                                <h4 id="mep-ready-depts" style="margin:0; font-size:1.6rem; color:var(--accent-green); font-weight:700;">0</h4>
+                            </div>
+                            <div class="metric-card" style="padding:1rem; background:rgba(255,255,255,0.015); border:1px solid var(--glass-border); border-radius:8px; display:flex; flex-direction:column; gap:4px; height:auto; min-height:unset; width:auto;">
+                                <span class="card-label" style="font-size:0.75rem; color:var(--text-secondary);">Pending Utilities</span>
+                                <h4 id="mep-pending-depts" style="margin:0; font-size:1.6rem; color:var(--accent-amber); font-weight:700;">0</h4>
+                            </div>
+                        </div>
+
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+                                <button class="btn btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.78rem; height: 32px; display: inline-flex; align-items: center; gap: 6px; border-color: rgba(255,255,255,0.1); cursor: pointer;" onclick="promptAddMepDepartment()">
+                                    <i class="fa-solid fa-building-circle-arrow-right"></i> Add Department
+                                </button>
+                                <button class="btn btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.78rem; height: 32px; display: inline-flex; align-items: center; gap: 6px; border-color: rgba(255,255,255,0.1); cursor: pointer;" onclick="promptAddMepTask()">
+                                    <i class="fa-solid fa-list-check"></i> Add Task
+                                </button>
+                            </div>
+
+                        <!-- Dynamic Table Wrapper -->
+                        <div class="table-wrapper" style="overflow-x:auto;">
+                            <table class="data-table" id="mep-table" style="width:100%; min-width:1200px; border-collapse:collapse;">
+                                <thead id="mep-table-head">
+                                    <!-- Dynamic header from JS -->
+                                </thead>
+                                <tbody id="mep-table-body">
+                                    <!-- Dynamic rows from JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Machine Modal -->
+    <div class="modal" id="add-machine-modal">
+        <div class="modal-content" style="max-width: 580px; background: rgba(10, 15, 30, 0.95); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <span class="close-btn" id="add-machine-close">&times;</span>
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+                <h3 style="font-size: 1.3rem; color: var(--accent-blue); margin: 0; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-circle-plus"></i> Add Additional Machine</h3>
+            </div>
+            <div class="modal-body">
+                <form id="add-machine-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-mach-name" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Machine Name *</label>
+                            <input type="text" id="add-mach-name" class="form-control" placeholder="e.g. CNC DRILLING - 5" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-mach-dept" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Department *</label>
+                            <input type="text" id="add-mach-dept" class="form-control" placeholder="e.g. DRILLING" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%; text-transform: uppercase;">
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-mach-supplier" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Supplier</label>
+                            <input type="text" id="add-mach-supplier" class="form-control" placeholder="e.g. SCHMOLL" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-mach-lead" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Team Lead</label>
+                            <input type="text" id="add-mach-lead" class="form-control" placeholder="e.g. Rajaselvan" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-mach-primary" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Primary Technician</label>
+                            <input type="text" id="add-mach-primary" class="form-control" placeholder="e.g. Pandiyan" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-mach-secondary" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Secondary Technician</label>
+                            <input type="text" id="add-mach-secondary" class="form-control" placeholder="e.g. Tendulkar" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.8rem; margin-top: 0.5rem;">
+                        <h4 style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--accent-blue); display: flex; align-items: center; gap: 6px;"><i class="fa-regular fa-calendar-days"></i> Installation Phase Timeline</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label for="add-mach-start" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Start Date *</label>
+                                <input type="date" id="add-mach-start" class="form-control" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label for="add-mach-end" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">End Date *</label>
+                                <input type="date" id="add-mach-end" class="form-control" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem;">
+                        <button type="button" id="add-machine-cancel" class="btn btn-secondary" style="padding: 0.5rem 1.2rem;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.2rem;">Add Machine</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal" id="details-modal">
+        <div class="modal-content" style="max-width: 500px; max-height: 85vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
+            <span class="close-btn" id="modal-close">&times;</span>
+            
+            <!-- Details View -->
+            <div id="modal-details-view">
+                <div class="modal-header">
+                    <h3 id="modal-title">Machine Details</h3>
+                    <span class="badge" id="modal-badge">Imaging</span>
+                </div>
+                <div class="modal-body">
+                    <div class="info-row">
+                        <span class="info-label">Supplier:</span>
+                        <span class="info-value" id="modal-supplier">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Activity Phase:</span>
+                        <span class="info-value" id="modal-activity">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Days to Complete:</span>
+                        <span class="info-value" id="modal-duration">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Planned Start:</span>
+                        <span class="info-value" id="modal-start">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Planned End:</span>
+                        <span class="info-value" id="modal-end">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Actual Start:</span>
+                        <span class="info-value" id="modal-actual-start">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Actual End:</span>
+                        <span class="info-value" id="modal-actual-end">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Team Lead:</span>
+                        <span class="info-value" id="modal-lead">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label font-weight-bold">Primary Contact:</span>
+                        <span class="info-value" id="modal-primary">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Secondary / Tertiary:</span>
+                        <span class="info-value" id="modal-secondary">-</span>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <button type="button" id="btn-edit-machine" class="btn btn-primary" style="width: 100%; justify-content: center; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit Details & Team
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit View -->
+            <div id="modal-edit-view" style="display: none;">
+                <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+                    <h3 style="font-size: 1.3rem; color: var(--accent-blue); margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit Details & Team
+                    </h3>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-machine-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="edit-mach-name" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Machine Name *</label>
+                            <input type="text" id="edit-mach-name" class="form-control" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        
+                        <div id="edit-activities-container" style="max-height: 350px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
+                            <!-- Dynamic activity input pairs -->
+                        </div>
+
+                        <div style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                            <button type="button" id="btn-add-activity" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; padding: 0.4rem 0.8rem; border-color: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;">
+                                <i class="fa-solid fa-circle-plus"></i> Add Activity
+                            </button>
+                        </div>
+
+                        <!-- Team Selection Section -->
+                        <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.8rem; margin-top: 0.5rem;">
+                            <h4 style="margin-bottom: 0.8rem; font-size: 0.95rem; color: var(--accent-blue); display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-users-gear"></i> Assigned Installation Team</h4>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="edit-mach-lead" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Team Lead</label>
+                                    <input type="text" id="edit-mach-lead" list="personnel-suggestions" class="form-control" placeholder="TBD" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="edit-mach-primary" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Primary Contact</label>
+                                    <input type="text" id="edit-mach-primary" list="personnel-suggestions" class="form-control" placeholder="TBD" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="edit-mach-secondary" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Support Tech 1</label>
+                                    <input type="text" id="edit-mach-secondary" list="personnel-suggestions" class="form-control" placeholder="None" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="edit-mach-tertiary" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Support Tech 2</label>
+                                    <input type="text" id="edit-mach-tertiary" list="personnel-suggestions" class="form-control" placeholder="None" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="edit-mach-quaternary" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Support Tech 3</label>
+                                    <input type="text" id="edit-mach-quaternary" list="personnel-suggestions" class="form-control" placeholder="None" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                                </div>
+                            </div>
+                            
+                            <datalist id="personnel-suggestions">
+                                <!-- Suggestions populated dynamically in JS -->
+                            </datalist>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.2rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem; align-items: center;">
+                            <button type="button" id="btn-reset-machine" class="btn btn-secondary" style="padding: 0.5rem 1.2rem; color: #ef4444; border-color: rgba(239,68,68,0.2); margin-right: auto; display: none;">
+                                <i class="fa-solid fa-arrow-rotate-left"></i> Reset Defaults
+                            </button>
+                            <button type="button" id="btn-cancel-edit" class="btn btn-secondary" style="padding: 0.5rem 1.2rem;">Cancel</button>
+                            <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.2rem;">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal" id="share-modal">
+        <div class="modal-content" style="max-width: 460px;">
+            <span class="close-btn" id="share-modal-close">&times;</span>
+            <div class="modal-header">
+                <h3 style="display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-share-nodes" style="color: var(--accent-blue);"></i> Share Dashboard</h3>
+            </div>
+            <div class="modal-body" style="gap: 1.25rem;">
+                <div id="share-status-area">
+                    <!-- Status Alert Banner will be injected here -->
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; display: block; margin-bottom: 0.4rem;">Shareable Link</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="share-url-input" class="form-control" readonly style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; flex: 1; outline: none;">
+                        <button id="copy-share-btn" class="btn btn-secondary" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem;">
+                    <a id="whatsapp-share-btn" href="#" target="_blank" class="btn" style="background: #25D366; color: #fff; justify-content: center; font-weight: 600; text-decoration: none; padding: 0.6rem;">
+                        <i class="fa-brands fa-whatsapp" style="font-size: 1.2rem;"></i> Share via WhatsApp
+                    </a>
+                    <button id="native-share-btn" class="btn btn-primary" style="justify-content: center; font-weight: 600; padding: 0.6rem;">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i> Share via System...
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets Sync Modal -->
+    <div class="modal" id="google-sync-modal">
+        <div class="modal-content" style="max-width: 500px; background: rgba(10, 15, 30, 0.96); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+            <span class="close-btn" id="google-sync-close">&times;</span>
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+                <h3 style="font-size: 1.25rem; color: var(--accent-blue); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Google Sheets Sync Settings
+                </h3>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div id="google-sync-status"></div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 500; display: block; margin-bottom: 0.4rem;">Google Apps Script Web App URL</label>
+                    <input type="text" id="google-sync-url" placeholder="https://script.google.com/macros/s/.../exec" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.6rem; font-size: 0.88rem; width: 100%; box-sizing: border-box; outline: none;">
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="google-sync-enable" style="width: 16px; height: 16px; cursor: pointer;">
+                    <label for="google-sync-enable" style="font-size: 0.88rem; color: var(--text-primary); cursor: pointer; user-select: none; font-weight: 500;">Enable Google Sheets Sync</label>
+                </div>
+
+                <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
+                    <strong style="color: var(--text-secondary); display: block; margin-bottom: 4px;">Quick Setup Guide:</strong>
+                    1. Run <code style="color: var(--accent-blue);">create_combined_database.ps1</code> to build <code style="color: var(--accent-blue);">MICC_Database.xlsx</code>.
+                    <br>2. Upload to Google Drive and open as a Google Sheet.
+                    <br>3. Open <strong style="color: var(--text-secondary);">Extensions &gt; Apps Script</strong> and paste <code style="color: var(--accent-blue);">AppsScript.js</code> content.
+                    <br>4. Click <strong style="color: var(--text-secondary);">Deploy &gt; New deployment</strong>, select <strong style="color: var(--text-secondary);">Web app</strong>, execute as "Me", set access to "Anyone", and paste URL here.
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem; margin-top: 0.5rem;">
+                    <button type="button" id="google-sync-test-btn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                        <i class="fa-solid fa-vial"></i> Test Connection
+                    </button>
+                    <button type="button" id="google-sync-save-btn" class="btn btn-primary" style="padding: 0.5rem 1.2rem;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save &amp; Reload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Pending Order Modal -->
+    <div class="modal" id="add-pending-modal">
+        <div class="modal-content" style="max-width: 580px; background: rgba(10, 15, 30, 0.95); border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <span class="close-btn" id="add-pending-close">&times;</span>
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+                <h3 style="font-size: 1.3rem; color: var(--accent-blue); margin: 0; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-circle-plus"></i> Add Pending Equipment Order</h3>
+            </div>
+            <div class="modal-body">
+                <form id="add-pending-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-name" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Machine Name *</label>
+                            <input type="text" id="add-pend-name" class="form-control" placeholder="e.g. Laser Direct Imaging" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-dept" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Department *</label>
+                            <input type="text" id="add-pend-dept" class="form-control" placeholder="e.g. IMAGING" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%; text-transform: uppercase;">
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-supplier" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Supplier</label>
+                            <input type="text" id="add-pend-supplier" class="form-control" placeholder="e.g. Altix" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-capex" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Capex No</label>
+                            <input type="text" id="add-pend-capex" class="form-control" placeholder="e.g. 15" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-priority" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Priority *</label>
+                            <input type="number" id="add-pend-priority" class="form-control" value="1" min="1" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-lead" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Lead Time (wks) *</label>
+                            <input type="number" id="add-pend-lead" class="form-control" value="8" min="0" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-transit" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Transit (wks) *</label>
+                            <input type="number" id="add-pend-transit" class="form-control" value="3" min="0" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-orderdate" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Order Date *</label>
+                            <input type="date" id="add-pend-orderdate" class="form-control" value="2026-05-01" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label for="add-pend-status" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: block; font-weight: 500;">Status *</label>
+                            <select id="add-pend-status" class="form-control" required style="background: rgba(10, 15, 30, 0.95); border: 1px solid var(--glass-border); color: #fff; border-radius: 6px; padding: 0.5rem; font-size: 0.88rem; width: 100%;">
+                                <option value="Under Finalisation">Under Finalisation</option>
+                                <option value="PO Released">PO Released</option>
+                                <option value="In Transit">In Transit</option>
+                                <option value="Delivered">Delivered</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1rem;">
+                        <button type="button" id="add-pending-cancel" class="btn btn-secondary" style="padding: 0.5rem 1.2rem;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.2rem;">Add Order</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script id="installation-data-script" src="data.js"></script>
+    <script src="google_sheets_sync.js"></script>
+    <script src="app.js"></script>
+    <script src="export.js"></script>
+</body>
+</html>
